@@ -20,17 +20,18 @@ function Transition(socket, file) {
     var self = this,
         reader = new FileReader,
         data = null,
-        dataCallback = null,
-        chunks = getChunks(file);
+        dataCallback = null;
+
 
     this.onComplete = null;
+    this.chunks = getChunks(file);
 
 
     reader.onloadend = function (event) {
-        var status = chunks.length ? "process" : "complete";
+        var status = self.chunks.length ? "process" : "complete";
 
         data = event.target.result;
-        dataCallback({status: status, data: data});
+        dataCallback({status: status, data: data, partsLeft: self.chunks.length});
     };
 
     socket.on("closeTransaction", function () {
@@ -38,15 +39,15 @@ function Transition(socket, file) {
     });
 
     socket.on("readData", function (callback) {
-        if (!chunks.length) return;
-        var chunk = chunks.shift();
+        if (!self.chunks.length) return;
+        var chunk = self.chunks.shift();
         dataCallback = callback;
         reader.readAsBinaryString(chunk);
     });
 
     function getChunks(file) {
         //1024 * 64 default value
-        var chunkSize = 1024 * 64,
+        var chunkSize = 1024 * 64 * 64,
             result = [],
             parts,
             reminder,

@@ -16,7 +16,7 @@
         function reciveFile(e) {
             console.log("Recive file started");
             socket.emit("openTransaction", uuid, function (data) {
-                console.log("Open transaction status: " + data.status);
+                console.log("Open transaction status: " + data.status + ". Chunks: " + data.parts);
                 var file = "";
                 socket.emit("readData", uuid, function readDataCallback(result) {
                     if (result.status === "error") {
@@ -27,6 +27,7 @@
                     file += result.data;
 
                     if (result.status == "process") {
+                        console.log("Part received. Left: " + result.partsLeft);
                         /* не дошли до конца запрашиваем дальше */
                         socket.emit("readData", uuid, readDataCallback);
                         return;
@@ -34,7 +35,7 @@
 
                     if (result.status == "complete") {
                         socket.emit("closeTransaction", uuid);
-                        console.log(file);
+
 
                         window.requestFileSystem(window.TEMPORARY, file.length, function (filesystem) {
                             fs = filesystem;

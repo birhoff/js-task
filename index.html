@@ -15,25 +15,19 @@
             $uploadControl.on('change', function (event) {
                 file = $uploadControl.get(0).files[0];
                 console.log("Sender choose file: " + file.name);
+
                 registrator.register(file, function (callback) {
                     console.log("File requested");
                     var transition = new Transition(socket, file);
                     transition.onComplete = function () {
                         console.log("File transferred from sender");
                     };
-                    callback({status: 'success'});
+                    callback({status: 'success', parts: transition.chunks.length});
                 }, function (link) {
                     console.log("File registered your link: " + link);
                 });
             });
         });
-
-
-        /*
-
-         socket.on('getFile', function (data, callback) {
-         callback("hello world");
-         });*/
     </script>
 </head>
 <body>
