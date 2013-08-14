@@ -46,7 +46,7 @@ function Transition(socket, file) {
 
     function getChunks(file) {
         //1024 * 64 default value
-        var chunkSize = /*1024 * 64*/ 10,
+        var chunkSize = 1024 * 64,
             result = [],
             parts,
             reminder,
