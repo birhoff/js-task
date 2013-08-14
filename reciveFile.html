@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/script.js"></script>
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+
+    <script>
+        window.requestFileSystem = window.requestFileSystem || window.webkitRequestFileSystem;
+        var fs = null;
+
+        var socket = io.connect('http://localhost');
+        var uuid = "[UUID]";
+
+        function reciveFile(e) {
+            console.log("Recive file started");
+            socket.emit("openTransaction", uuid, function (data) {
+                console.log("Open transaction status: " + data.status);
+                var file = "";
+                socket.emit("readData", uuid, function readDataCallback(result) {
+                    if (result.status === "error") {
+                        //TODO:
+                        return;
+                    }
+
+                    file += result.data;
+
+                    if (result.status == "process") {
+                        /* не дошли до конца запрашиваем дальше */
+                        socket.emit("readData", uuid, readDataCallback);
+                        return;
+                    }
+
+                    if (result.status == "complete") {
+                        socket.emit("closeTransaction", uuid);
+                        console.log(file);
+
+                        window.requestFileSystem(window.TEMPORARY, file.length, function (filesystem) {
+                            fs = filesystem;
+                            fs.root.getFile(uuid + ".tmp", {create: true}, function (fileEntry) {
+                                fileEntry.createWriter(function (fileWriter) {
+
+                                    fileWriter.onwriteend = function (e) {
+                                        $("#download-link").attr("href", fileEntry.toURL());
+                                        $("#download-link").show();
+                                    };
+
+                                    fileWriter.onerror = function (e) {
+                                        console.log('Write failed: ' + e.toString());
+                                    };
+
+                                    var bb = new Blob([file]);
+                                    fileWriter.write(bb);
+
+                                });
+                            });
+                        }, errorHandler);
+                        function errorHandler(e) {
+                            var msg = '';
+                            switch (e.code) {
+                                case FileError.QUOTA_EXCEEDED_ERR:
+                                    msg = 'QUOTA_EXCEEDED_ERR';
+                                    break;
+                                case FileError.NOT_FOUND_ERR:
+                                    msg = 'NOT_FOUND_ERR';
+                                    break;
+                                case FileError.SECURITY_ERR:
+                                    msg = 'SECURITY_ERR';
+                                    break;
+                                case FileError.INVALID_MODIFICATION_ERR:
+                                    msg = 'INVALID_MODIFICATION_ERR';
+                                    break;
+                                case FileError.INVALID_STATE_ERR:
+                                    msg = 'INVALID_STATE_ERR';
+                                    break;
+                                default:
+                                    msg = 'Unknown Error';
+                                    break;
+                            }
+                            ;
+                            document.querySelector('#example-list-fs-ul').innerHTML = 'Error: ' + msg;
+                        }
+                    }
+                });
+            });
+        }
+    </script>
+</head>
+<body>
+[FileName]
+<a href="#" onclick="reciveFile()">Recive</a>
+<a href="#" id="download-link" style="display: none;">Download</a>
+</body>
+</html>

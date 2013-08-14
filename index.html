@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/script.js"></script>
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script>
+        var socket = io.connect('http://localhost'),
+                registrator = new FileRegister(socket),
+                file = null;
+
+        $(window).load(function () {
+            var $uploadControl = $("#UploadInput");
+            $uploadControl.on('change', function (event) {
+                file = $uploadControl.get(0).files[0];
+                console.log("Sender choose file: " + file.name);
+                registrator.register(file, function (callback) {
+                    console.log("File requested");
+                    var transition = new Transition(socket, file);
+                    transition.onComplete = function () {
+                        console.log("File transferred from sender");
+                    };
+                    callback({status: 'success'});
+                }, function (link) {
+                    console.log("File registered your link: " + link);
+                });
+            });
+        });
+
+
+        /*
+
+         socket.on('getFile', function (data, callback) {
+         callback("hello world");
+         });*/
+    </script>
+</head>
+<body>
+<input type="file" id="UploadInput">Upload</input>
+</body>
+</html>
