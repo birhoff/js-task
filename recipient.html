@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title></title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/recipient.js"></script>
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+</head>
+<body>
+[FileName]
+<a href="#" id="receiveLink">Receive</a>
+<a href="#" id="download-link" style="display: none;">Download</a>
+
+<script>
+    var socket = io.connect('http://localhost'),
+            receiver = null,
+            fileInfo = {
+                id: "[UUID]",
+                name: "[FileName]",
+                parts: "[Parts]"
+            };
+
+    $(window).load(function () {
+        $("#receiveLink").on("click", function (ev) {
+            ev.preventDefault();
+            receiver = new Receiver(socket);
+            receiver.start();
+        });
+    });
+</script>
+
+</body>
+</html>
