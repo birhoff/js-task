@@ -5,40 +5,6 @@ var DbWrapper = function () {
     };
 };
 
-DbWrapper.prototype.set = function (table, key, value) {
-    "use strict";
-    this._db[table][key] = value;
-};
-
-DbWrapper.prototype.get = function (table, key) {
-    "use strict";
-    return this._db[table][key];
-};
-
-DbWrapper.prototype.add = function (table, value) {
-    "use strict";
-    var key = DbWrapper.getFileIdentificator(this._db[table]);
-    this._db[table][key] = value;
-    return key;
-};
-
-DbWrapper.Tables = {
-    Files: "files",
-    Transactions: "transactions"
-};
-
-DbWrapper.getFileIdentificator = function (table) {
-    "use strict";
-    var result = null;
-    while (!result) {
-        result = 'xxxxxx'.replace(/[x]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-        if (table[result]) result = null;
-    }
-    return result;
-};
 
 var app = require('express')(),
     server = require('http').createServer(app),
@@ -49,7 +15,8 @@ var app = require('express')(),
 io.set('log level', 1);
 server.listen(8080);
 
-io.sockets.on('connection', function (socket) {
+var senderIo = io.of('/sender').on('connection', function (socket) {
+    "use strict";
 
     socket.on('registerFile', function (info) {
         var dbItem = {
@@ -57,31 +24,46 @@ io.sockets.on('connection', function (socket) {
             file: info.file,
             parts: info.parts
         };
-        var fileId = db.add(DbWrapper.Tables.Files, dbItem);
-        socket.emit("register", null, fileId);
+        var fileId = db.add(Tables.Files, dbItem);
+        socket.emit("fileRegistered", null, fileId);
     });
+
+    socket.on("sendData", function sendData(transactionId, data) {
+        var transaction = db.get(Tables.Transactions, transactionId);
+        if (transaction.data) {
+            setTimeout(sendData, 100, transactionId, data);
+            return;
+        }
+        transaction.data = data;
+    });
+});
+
+var recipientIo = io.of('/recipient').on('connection', function (socket) {
+    "use strict";
 
     socket.on("openTransaction", function (fileId, callback) {
-        var dbItem = db.get(DbWrapper.Tables.Files, fileId);
-        var transactionId = db.add(DbWrapper.Tables.Transactions, {file: fileId, recipient: socket, sender: dbItem.socket});
+        var dbItem = db.get(Tables.Files, fileId);
+        var transactionId = db.add(Tables.Transactions, {file: fileId, recipient: socket, sender: dbItem.socket});
         dbItem.socket.emit("openTransaction", transactionId);
         callback(null, transactionId);
+        dbItem.socket.emit("getData");
     });
 
-    socket.on("closeTransaction", function (uuid) {
-
+    socket.on("closeTransaction", function (transactionId) {
+        var transaction = db.get(Tables.Transactions, transactionId);
+        transaction.sender.emit("closeTransaction", transactionId);
+        db.set(Tables.Transactions, transactionId, null);
     });
 
-    socket.on("getData", function (transactionId) {
-        var transaction = db.get(DbWrapper.Tables.Transactions, transactionId);
+    socket.on("getData", function getData(transactionId) {
+        var transaction = db.get(Tables.Transactions, transactionId);
+        if (!transaction.data) {
+            setTimeout(getData, 300, transactionId);
+            return;
+        }
         transaction.sender.emit("getData");
-    });
-
-    socket.on("sendData", function (transactionId, data) {
-        var transaction = db.get(DbWrapper.Tables.Transactions, transactionId);
-        console.log((new Date).toTimeString() + " | start:: transit");
-        transaction.recipient.emit("reciveData", data);
-        console.log((new Date).toTimeString() + " | end:: transit");
+        transaction.recipient.emit("reciveData", transaction.data);
+        transaction.data = null;
     });
 });
 
@@ -97,12 +79,44 @@ app.get('/', function (req, res) {
 
 app.get(/^\/file\/(\w+)/, function (req, res) {
     var uuid = req.params[0],
-        pInfo = db.get(DbWrapper.Tables.Files, uuid);
+        pInfo = db.get(Tables.Files, uuid);
 
     fs.readFile('recipient.html', 'utf8', function (err, data) {
         if (err) {
             return console.log(err);
         }
-        res.send(data.replace('[FileName]', pInfo.file.name).replace('[UUID]', uuid).replace('[Parts]', pInfo.parts));
+        res.send(data.replace('[FileName]', pInfo.file.name).replace('[UUID]', uuid).replace('[Parts]', pInfo.parts).replace("[LENGTH]", pInfo.file.size));
     });
 });
+
+var Tables = {
+    Files: "files",
+    Transactions: "transactions"
+};
+
+DbWrapper.prototype.set = function (table, key, value) {
+    "use strict";
+    this._db[table][key] = value;
+};
+DbWrapper.prototype.get = function (table, key) {
+    "use strict";
+    return this._db[table][key];
+};
+DbWrapper.prototype.add = function (table, value) {
+    "use strict";
+    var key = DbWrapper.getFileIdentificator(this._db[table]);
+    this._db[table][key] = value;
+    return key;
+};
+DbWrapper.getFileIdentificator = function (table) {
+    "use strict";
+    var result = null;
+    while (!result) {
+        result = 'xxxxxx'.replace(/[x]/g, function (c) {
+            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+        if (table[result]) result = null;
+    }
+    return result;
+};

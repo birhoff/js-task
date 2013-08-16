@@ -6,7 +6,7 @@
     <script src="/js/sender.js"></script>
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
     <script>
-        var socket = io.connect('http://localhost'),
+        var socket = io.connect('http://localhost/sender'),
                 sender = new Sender(socket);
 
         $(window).load(function () {

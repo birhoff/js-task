@@ -7,24 +7,29 @@
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
 </head>
 <body>
-[FileName]
 <a href="#" id="receiveLink">Receive</a>
 <a href="#" id="download-link" style="display: none;">Download</a>
 
 <script>
-    var socket = io.connect('http://localhost'),
+    var socket = io.connect('http://localhost/recipient'),
             receiver = null,
             fileInfo = {
                 id: "[UUID]",
                 name: "[FileName]",
-                parts: "[Parts]"
+                parts: "[Parts]",
+                length: "[LENGTH]"
             };
 
     $(window).load(function () {
         $("#receiveLink").on("click", function (ev) {
             ev.preventDefault();
             receiver = new Receiver(socket);
-            receiver.start();
+            receiver.start(function (error, duration) {
+                var saver = new Saver(receiver.getData());
+                saver.start(function (error, link) {
+                    console.log(link);
+                })
+            });
         });
     });
 </script>

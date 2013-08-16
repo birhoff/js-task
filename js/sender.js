@@ -1,7 +1,7 @@
 var Socket = {
     commands: {
         register: "registerFile",
-        onRegister: "register",
+        onRegister: "fileRegistered",
         openTransaction: "openTransaction",
         send: "sendData"}
 };
@@ -53,7 +53,7 @@ Sender.slice = function (file, /* optional */ partSize) {
         currentOffset = 0, parts, bytesLeft;
 
     if (!file) return result;
-    if (file.size < chunkSize) return [file];
+    if (file.size < chunkSize) return [{blob: file, data: null}];
 
     parts = Math.floor(file.size / chunkSize);
     bytesLeft = file.size % chunkSize;
@@ -97,6 +97,7 @@ TransitManager.prototype.start = function () {
 
 
     self._socket.on("getData", function sendPart() {
+        if (!self._parts[currentIndex]) return;
         if (!self._parts[currentIndex].data) {
             setTimeout(sendPart, 300);
             return;
@@ -115,9 +116,9 @@ TransitManager.prototype.start = function () {
             self._parts[readIndex].data = {status: status, data: data};
             if (status === "complete") return;
             readIndex++;
-            reader.readAsBinaryString(self._parts[readIndex].blob);
+            reader.readAsDataURL(self._parts[readIndex].blob);
         };
-        reader.readAsBinaryString(self._parts[readIndex].blob);
+        reader.readAsDataURL(self._parts[readIndex].blob);
     }
 };
 
