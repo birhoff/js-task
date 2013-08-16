@@ -32,7 +32,18 @@ Receiver.prototype.start = function (callback) {
             }, 300);
             return;
         }
-        socket.emit("getData", transitionId);
+
+        /* overdrive */
+        function checkOverdrive() {
+            if (self._data.length > 100) {
+                console.log("wrn:: overdrive");
+                setTimeout(checkOverdrive, 500);
+                return;
+            }
+            socket.emit("getData", transitionId);
+        };
+
+        checkOverdrive();
     });
 
     socket.emit("openTransaction", fileInfo.id, function (error, id) {
@@ -50,29 +61,16 @@ Receiver.prototype.start = function (callback) {
         window.requestFileSystem(window.TEMPORARY, info.length, function (filesystem) {
             fs = filesystem;
 
-            fs.root.getFile(info.name, {create: false}, function (entry) {
-                debugger;
-                entry.remove(function () {
+
+            fs.root.getFile(info.name, {create: true}, function (fileEntry) {
+                fileEntry.remove(function () {
                     fs.root.getFile(info.name, {create: true}, function (fileEntry) {
 
                         fileEntry.createWriter(function (fileWriter) {
+
                             fileWriter.onwriteend = function (e) {
                                 setTimeout(function () {
-                                    var blobs = [];
-
-                                    while (parts.length) {
-                                        blobs.push(dataURLToBlob(parts.shift()));
-                                    }
-
-                                    if (!blobs.length && self._downloadStatus === "complete") {
-                                        self._saveUrl = fileEntry.toURL();
-                                        return;
-                                    }
-
-
-                                    var bb = new Blob(blobs);
-                                    if (!create) fileWriter.seek(fileWriter.length);
-                                    fileWriter.write(bb);
+                                    writeToFile();
                                 }, 2000);
                             };
 
@@ -80,14 +78,29 @@ Receiver.prototype.start = function (callback) {
                                 console.log('Write failed: ' + e.toString());
                             };
 
+                            writeToFile();
+                            function writeToFile() {
+                                var blobs = [];
 
-                            fileWriter.onwriteend(null);
-                        });
-                    });
+                                while (parts.length) {
+                                    blobs.push(dataURLToBlob(parts.shift()));
+                                }
+
+                                if (!blobs.length && self._downloadStatus === "complete") {
+                                    self._saveUrl = fileEntry.toURL();
+                                    return;
+                                }
+
+
+                                var bb = new Blob(blobs);
+                                if (!create) fileWriter.seek(fileWriter.length);
+                                fileWriter.write(bb);
+                            };
+                        }, errorHandler);
+                    }, errorHandler);
                 }, errorHandler);
             }, errorHandler);
         }, errorHandler);
-
 
         function errorHandler(e) {
             debugger;

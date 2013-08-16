@@ -53,7 +53,9 @@ Sender.slice = function (file, /* optional */ partSize) {
         currentOffset = 0, parts, bytesLeft;
 
     if (!file) return result;
-    if (file.size < chunkSize) return [{blob: file, data: null}];
+    if (file.size < chunkSize) return [
+        {blob: file, data: null}
+    ];
 
     parts = Math.floor(file.size / chunkSize);
     bytesLeft = file.size % chunkSize;
@@ -116,7 +118,17 @@ TransitManager.prototype.start = function () {
             self._parts[readIndex].data = {status: status, data: data};
             if (status === "complete") return;
             readIndex++;
-            reader.readAsDataURL(self._parts[readIndex].blob);
+
+            /* Max read ahead for 100 parts + 1 */
+            checkReadBuffer();
+
+            function checkReadBuffer() {
+                if (readIndex > currentIndex + 100) {
+                    setTimeout(checkReadBuffer, 2000);
+                    return;
+                }
+                reader.readAsDataURL(self._parts[readIndex].blob);
+            }
         };
         reader.readAsDataURL(self._parts[readIndex].blob);
     }
