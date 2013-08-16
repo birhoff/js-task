@@ -24,11 +24,14 @@
         $("#receiveLink").on("click", function (ev) {
             ev.preventDefault();
             receiver = new Receiver(socket);
-            receiver.start(function (error, duration) {
-                var saver = new Saver(receiver.getData());
-                saver.start(function (error, link) {
-                    console.log(link);
-                })
+            receiver.start(function (error, result) {
+                /*var saver = new Saver(receiver.getData());
+                 saver.start(function (error, link) {
+                 console.log(link);
+                 })*/
+                console.log(result.url);
+                $("#download-link").attr('href', result.url);
+                $("#download-link").show();
             });
         });
     });
