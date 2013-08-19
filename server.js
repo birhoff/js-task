@@ -72,6 +72,12 @@ var recipientIo = io.of('/recipient').on('connection', function (socket) {
 app.get(/\/js\/(.+)/, function (req, res) {
     res.sendfile(__dirname + '/js/' + req.params[0]);
 });
+app.get(/\/images\/(.+)/, function (req, res) {
+    res.sendfile(__dirname + '/images/' + req.params[0]);
+});
+app.get(/\/styles\/(.+)/, function (req, res) {
+    res.sendfile(__dirname + '/styles/' + req.params[0]);
+});
 
 app.get('/', function (req, res) {
     res.sendfile(__dirname + '/sender.html');

@@ -1,0 +1,34 @@
+body {
+    background: url(../images/background-pattern.png) 0 0 repeat;
+}
+
+.content {
+    background: #fff;
+    padding: 0;
+    width: 40%;
+    margin: 20% auto;
+    box-shadow: 0 1px 2px gray inset;
+    border-radius: 8px;
+}
+
+.upload-container {
+    position: relative;
+    background: #535353;
+    height: 300px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+}
+
+.upload-button {
+    position: absolute;
+    width: 100%;
+    top: 100%;
+    margin-top: -59px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.upload-input {
+    position: absolute;
+    left: -9999px;
+}

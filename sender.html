@@ -2,9 +2,12 @@
 <html>
 <head>
     <title></title>
+    <link href="/styles/sender.css" media="screen" rel="stylesheet" type="text/css">
+    <link href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" media="screen" rel="stylesheet" type="text/css">
+    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
+    <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/sender.js"></script>
-    <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
     <script>
         var socket = io.connect('http://localhost/sender'),
                 sender = new Sender(socket);
@@ -17,10 +20,21 @@
                     console.log(link);
                 });
             });
+
+            $("#upload-btn").button();
+            $("#upload-btn").on("click", function(ev){
+                $uploadControl.click();
+            })
         });
     </script>
 </head>
 <body>
-<input type="file" id="UploadInput">Upload</input>
+<div class="content">
+    <div class="upload-container">
+        <h1> Welcome, to send file please click upload button. </h1>
+        <button class="upload-button" id="upload-btn">Upload</button>
+    </div>
+</div>
+<input type="file" id="UploadInput" class="upload-input" />
 </body>
 </html>
