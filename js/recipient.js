@@ -224,31 +224,56 @@ FileSystemSaver.settings = {
 
 function RamSaver() {
     "use strict";
+    var self = this;
+
     this._data = [];
     this._url = null;
     this._onSave = null;
     this._blob = null;
+    this._state = "";
+
+    this._write = function () {
+        if (self._state === Saver.States.readyForWrite)
+            self._state = Saver.States.writing;
+
+        if (!self._data.length && self._state === Saver.States.downloadComplete) {
+            self._url = URL.createObjectURL(self._blob);
+            self._state = Saver.States.complete;
+            if (self._onSave) self._onSave(self._url);
+            return;
+        }
+        if (!self._data.length) {
+            setTimeout(self._write, FileSystemSaver.settings.writeTimeout)
+            return;
+        }
+
+        var blobs = [];
+
+        while (self._data.length) {
+            var dataItem = self._data.shift();
+            blobs.push(Saver.dataURLToBlob(dataItem));
+            dataItem = null;
+        }
+        if (blobs.length) {
+            if (self._blob) blobs.unshift(self._blob);
+            self._blob = new Blob(blobs);
+            blobs = null;
+            setTimeout(self._write, 2000);
+        }
+    };
 };
 
 RamSaver.prototype.start = function (info) {
     "use strict";
-
+    setTimeout(this._write, 2000);
 };
 
 RamSaver.prototype.stop = function (callback) {
     "use strict";
     var self = this;
-    var blobs = [];
 
-    while (self._data.length) {
-        var dataItem = self._data.shift();
-        blobs.push(Saver.dataURLToBlob(dataItem));
-        dataItem = null;
-    }
-    self._blob = new Blob(blobs);
-    self._url = URL.createObjectURL(self._blob);
-    blobs = null;
-    callback(self._url);
+    self._state = Saver.States.downloadComplete;
+    self._onSave = callback;
 };
 
 RamSaver.prototype.add = function (data) {
