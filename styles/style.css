@@ -2,7 +2,7 @@ body {
     background: url(../images/background-pattern.png) 0 0 repeat;
 }
 
-#linkScreen, #uplodingScreen {
+#linkScreen, #uplodingScreen, #finishScreen, #downloadingScreen {
     display: none;
 }
 
@@ -18,7 +18,7 @@ body {
 .upload-container {
     position: relative;
     background: #535353;
-    height: 300px;
+    height: 200px;
     border: 1px solid #ccc;
     border-radius: 8px;
 }

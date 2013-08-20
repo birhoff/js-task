@@ -20,6 +20,7 @@ Receiver.prototype.start = function (callback) {
         self._saver.add(result.data);
         result.data = null;
         parts++;
+        $(self).trigger("progress", ((parts / fileInfo.parts) * 100).toFixed(0));
 
         if (result.status === "complete") {
             var duration = (new Date((new Date) - startTime));
@@ -283,3 +284,26 @@ RamSaver.prototype.add = function (data) {
 
 RamSaver.prototype.getUrl = function () {
 };
+
+Utility = {
+    getTypedSize: function (size) {
+        "use strict";
+        var fileSize = {};
+        if (size < 1024) {
+            // size in bytes
+            fileSize.size = size;
+            fileSize.type = "bytes";
+        } else {
+            if (size < 1024 * 1024) {
+                // in kb
+                fileSize.size = (size / 1024).toFixed(2);
+                fileSize.type = "kb";
+            } else {
+                // mb
+                fileSize.size = (size / (1024 * 1024)).toFixed(2);
+                fileSize.type = "mb";
+            }
+        }
+        return fileSize;
+    }
+}

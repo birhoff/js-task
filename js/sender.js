@@ -38,11 +38,11 @@ Sender.prototype.register = function (file, callback) {
             transactionId = id;
             transitMng = new TransitManager(id, self._socket, self._parts);
 
-            $(transitMng).on("process", function(event, value){
-                $(self).trigger("process", value);
+            $(transitMng).on("progress", function (event, value) {
+                $(self).trigger("progress", value);
             });
 
-            $(transitMng).on("endUpload", function(event, value){
+            $(transitMng).on("endUpload", function (event, value) {
                 $(self).trigger("endUpload");
             });
 
@@ -52,7 +52,7 @@ Sender.prototype.register = function (file, callback) {
         callback && callback(Sender.idToUrl(fileId));
     });
 
-    socket.emit(Socket.commands.register, { file: self._file, parts: self._parts.length });
+    socket.emit(Socket.commands.register, { file: {name: self._file.name, size: self._file.size}, parts: self._parts.length });
 };
 
 /** Return array of Blobs with size = partSize or  1024 * 64 as default blob size */

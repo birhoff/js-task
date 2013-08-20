@@ -2,7 +2,7 @@
 <html>
 <head>
     <title></title>
-    <link href="/styles/sender.css" media="screen" rel="stylesheet" type="text/css">
+    <link href="/styles/style.css" media="screen" rel="stylesheet" type="text/css">
     <link href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" media="screen" rel="stylesheet"
           type="text/css">
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
@@ -29,12 +29,13 @@
                         $("#uplodingScreen").css("display", "table");
                     });
 
-                    $(sender).on("process", function (event, value) {
-                        $("#progressBar").progressbar("value", value);
+                    $(sender).on("progress", function (event, value) {
+                        $("#progressBar").progressbar("value", parseInt(value));
                     });
 
                     $(sender).on("endUpload", function () {
-
+                        $("#uplodingScreen").hide();
+                        $("#finishScreen").css("display", "table");
                     });
                 });
             });
@@ -65,8 +66,6 @@
                 <h1> Your personal link is: </h1>
 
                 <h2><a id="linkContainer" class="file-link" href="#"></a></h2>
-            </div>
-            <div class="button-bottom">
                 <h4>Please sent it to recipient.</h4>
             </div>
         </div>
@@ -76,6 +75,14 @@
                 <h1> Your file currently uploading </h1>
 
                 <div id="progressBar"></div>
+            </div>
+        </div>
+
+        <div id="finishScreen" class="layout">
+            <div class="message-center">
+                <h1> Your file successfully uploaded </h1>
+
+                <a href="" class="upload-button">Upload new file</a>
             </div>
         </div>
 
