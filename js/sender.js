@@ -37,7 +37,17 @@ Sender.prototype.register = function (file, callback) {
         socket.on(Socket.commands.openTransaction, function (id) {
             transactionId = id;
             transitMng = new TransitManager(id, self._socket, self._parts);
+
+            $(transitMng).on("process", function(event, value){
+                $(self).trigger("process", value);
+            });
+
+            $(transitMng).on("endUpload", function(event, value){
+                $(self).trigger("endUpload");
+            });
+
             transitMng.start();
+            $(self).trigger("startUpload");
         });
         callback && callback(Sender.idToUrl(fileId));
     });
@@ -79,12 +89,15 @@ Sender.idToUrl = function (fileId) {
 
 function TransitManager(transactionId, socket, parts) {
     "use strict";
+    var self = this;
+
     this._id = transactionId;
     this._socket = socket;
     this._parts = parts;
 
     socket.on("closeTransaction", function () {
         console.log("closeTransition");
+        $(self).trigger("endUpload");
     });
 };
 
@@ -106,6 +119,7 @@ TransitManager.prototype.start = function () {
         }
         console.log((new Date).toTimeString() + " | Send part " + (currentIndex + 1) + " of " + self._parts.length);
         socket.emit(Socket.commands.send, self._id, self._parts[currentIndex].data);
+        $(self).trigger("progress", (currentIndex / self._parts.length * 100).toFixed(0));
         self._parts[currentIndex].data = null;
         currentIndex++;
     });

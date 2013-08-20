@@ -2,6 +2,10 @@ body {
     background: url(../images/background-pattern.png) 0 0 repeat;
 }
 
+#linkScreen, #uplodingScreen {
+    display: none;
+}
+
 .content {
     background: #fff;
     padding: 0;
@@ -19,13 +23,74 @@ body {
     border-radius: 8px;
 }
 
-.upload-button {
-    position: absolute;
+.layout {
+    display: table;
+    height: 100%;
     width: 100%;
-    top: 100%;
-    margin-top: -59px;
-    border-top-left-radius: 0;
-    border-top-right-radius: 0;
+}
+
+.message-center {
+    display: table-row;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    color: #ccc;
+}
+
+.button-bottom {
+    text-align: center;
+    display: table-row;
+    height: 28px;
+    width: 100%;
+}
+
+.upload-button {
+    position: relative;
+    display: inline-block;
+    margin: 15px 25px;
+    outline: none;
+    color: #fff;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 400;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.3);
+    font-size: 1.35em;
+}
+
+.upload-button:before {
+    margin-right: 10px;
+    content: '[';
+    -webkit-transform: translateX(20px);
+    -moz-transform: translateX(20px);
+    transform: translateX(20px);
+}
+
+.upload-button:after {
+    margin-left: 10px;
+    content: ']';
+    -webkit-transform: translateX(-20px);
+    -moz-transform: translateX(-20px);
+    transform: translateX(-20px);
+}
+
+.upload-button:before, .upload-button:after {
+    display: inline-block;
+    opacity: 0;
+    -webkit-transition: -webkit-transform 0.3s, opacity 0.2s;
+    -moz-transition: -moz-transform 0.3s, opacity 0.2s;
+    transition: transform 0.3s, opacity 0.2s;
+}
+
+.upload-button:hover:before, .upload-button:hover:after {
+    opacity: 1;
+    -webkit-transform: translateX(0px);
+    -moz-transform: translateX(0px);
+    transform: translateX(0px);
+}
+
+.file-link {
+    color: #269ccb
 }
 
 .upload-input {

@@ -3,7 +3,8 @@
 <head>
     <title></title>
     <link href="/styles/sender.css" media="screen" rel="stylesheet" type="text/css">
-    <link href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" media="screen" rel="stylesheet" type="text/css">
+    <link href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" media="screen" rel="stylesheet"
+          type="text/css">
     <script src="http://code.jquery.com/jquery-2.0.3.min.js"></script>
     <script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
     <script src="/socket.io/socket.io.js"></script>
@@ -17,12 +18,29 @@
             $uploadControl.on('change', function (event) {
                 file = $uploadControl.get(0).files[0];
                 sender.register(file, function (link) {
-                    console.log(link);
+                    $("#linkContainer").text(link);
+                    $("#linkContainer").attr('href', link);
+                    $("#uploadScreen").hide();
+                    $("#linkScreen").css("display", "table");
+
+                    $(sender).on("startUpload", function () {
+                        $("#progressBar").progressbar({value: false});
+                        $("#linkScreen").hide();
+                        $("#uplodingScreen").css("display", "table");
+                    });
+
+                    $(sender).on("process", function (event, value) {
+                        $("#progressBar").progressbar("value", value);
+                    });
+
+                    $(sender).on("endUpload", function () {
+
+                    });
                 });
             });
 
-            $("#upload-btn").button();
-            $("#upload-btn").on("click", function(ev){
+            $("#upload-btn").on("click", function (ev) {
+                ev.preventDefault();
                 $uploadControl.click();
             })
         });
@@ -31,10 +49,38 @@
 <body>
 <div class="content">
     <div class="upload-container">
-        <h1> Welcome, to send file please click upload button. </h1>
-        <button class="upload-button" id="upload-btn">Upload</button>
+        <div id="uploadScreen" class="layout">
+            <div class="message-center">
+                <h1> Welcome, </h1>
+
+                <h2>to send file please click upload button.</h2>
+            </div>
+            <div class="button-bottom">
+                <a href="#" class="upload-button" id="upload-btn">Upload</a>
+            </div>
+        </div>
+
+        <div id="linkScreen" class="layout">
+            <div class="message-center">
+                <h1> Your personal link is: </h1>
+
+                <h2><a id="linkContainer" class="file-link" href="#"></a></h2>
+            </div>
+            <div class="button-bottom">
+                <h4>Please sent it to recipient.</h4>
+            </div>
+        </div>
+
+        <div id="uplodingScreen" class="layout">
+            <div class="message-center">
+                <h1> Your file currently uploading </h1>
+
+                <div id="progressBar"></div>
+            </div>
+        </div>
+
     </div>
 </div>
-<input type="file" id="UploadInput" class="upload-input" />
+<input type="file" id="UploadInput" class="upload-input"/>
 </body>
 </html>
