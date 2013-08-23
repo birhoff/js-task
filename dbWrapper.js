@@ -1,3 +1,0 @@
-
-
-exports.dbWrapper = new DbWrapper();

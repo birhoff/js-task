@@ -1,20 +1,12 @@
-var DbWrapper = function () {
-    this._db = {
-        files: {},
-        transactions: {}
-    };
-};
+"use strict";
 
-
-var app = require('express')(),
-    express = require('express'),
+var express = require('express'),
+    app = express(),
     server = require('http').createServer(app),
     io = require('socket.io').listen(server),
-    fs = require('fs'),
     jade = require("jade"),
-    db = new DbWrapper;
-
-io.set('log level', 1);
+    db = new (require('./modules/simple.database').DbWrapper)(),
+    Utility = require('./modules/utility').Utility;
 
 app.configure('all', function () {
     app.use('/js', express.static(__dirname + '/js'));
@@ -26,7 +18,9 @@ app.configure('all', function () {
 
 server.listen(8080);
 
-var senderIo = io.of('/sender').on('connection', function (socket) {
+io.set('log level', 1);
+
+io.of('/sender').on('connection', function (socket) {
     "use strict";
 
     socket.on('registerFile', function (info) {
@@ -49,9 +43,7 @@ var senderIo = io.of('/sender').on('connection', function (socket) {
     });
 });
 
-var recipientIo = io.of('/recipient').on('connection', function (socket) {
-    "use strict";
-
+io.of('/recipient').on('connection', function (socket) {
     socket.on("openTransaction", function (fileId, callback) {
         var dbItem = db.get(Tables.Files, fileId);
         var transactionId = db.add(Tables.Transactions, {file: fileId, recipient: socket, sender: dbItem.socket});
@@ -79,56 +71,24 @@ var recipientIo = io.of('/recipient').on('connection', function (socket) {
 });
 
 app.get('/', function (req, res) {
-
-    fs.readFile('sender.jade', 'utf8', function (err, data) {
-        if (err) {
-            return console.log(err);
-        }
-        var fn = jade.compile(data);
-        res.send(fn());
-    });
+    res.send(jade.renderFile('./templates/sender.jade'));
 });
 
 app.get(/^\/file\/(\w+)/, function (req, res) {
     var uuid = req.params[0],
-        pInfo = db.get(Tables.Files, uuid);
+        pInfo = db.get(Tables.Files, uuid),
+        fileInfo = {
+            id: uuid,
+            name: pInfo.file.name,
+            parts: pInfo.parts,
+            size: Utility.getTypedSize(pInfo.file.size)
+        },
+        locals = {fileInfo: fileInfo};
 
-    fs.readFile('recipient.html', 'utf8', function (err, data) {
-        if (err) {
-            return console.log(err);
-        }
-        res.send(data.replace('[FileName]', pInfo.file.name).replace('[UUID]', uuid).replace('[Parts]', pInfo.parts).replace("[LENGTH]", pInfo.file.size));
-    });
+    res.send(jade.renderFile('./templates/recipient.jade', locals));
 });
 
 var Tables = {
     Files: "files",
     Transactions: "transactions"
-};
-
-DbWrapper.prototype.set = function (table, key, value) {
-    "use strict";
-    this._db[table][key] = value;
-};
-DbWrapper.prototype.get = function (table, key) {
-    "use strict";
-    return this._db[table][key];
-};
-DbWrapper.prototype.add = function (table, value) {
-    "use strict";
-    var key = DbWrapper.getFileIdentificator(this._db[table]);
-    this._db[table][key] = value;
-    return key;
-};
-DbWrapper.getFileIdentificator = function (table) {
-    "use strict";
-    var result = null;
-    while (!result) {
-        result = 'xxxxxx'.replace(/[x]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-        if (table[result]) result = null;
-    }
-    return result;
 };

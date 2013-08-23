@@ -1,33 +1,34 @@
-var fs = null;
+"use strict";
 
-function Receiver(socket) {
-    "use strict";
+function Receiver(socket, fileInfo) {
     this._socket = socket;
     this._fileInfo = fileInfo;
     this._saver = Saver.get();
 }
 
 Receiver.prototype.start = function (callback) {
-    "use strict";
     var self = this,
         transitionId = null,
         startTime = null,
         parts = 0;
 
-    self._saver.start(window.fileInfo);
+    this._saver.start(this._fileInfo);
 
     socket.on("reciveData", function (result) {
         self._saver.add(result.data);
         result.data = null;
         parts++;
-        $(self).trigger("progress", ((parts / fileInfo.parts) * 100).toFixed(0));
+        $(self).trigger("progress", ((parts / self._fileInfo.parts) * 100).toFixed(0));
 
         if (result.status === "complete") {
-            var duration = (new Date((new Date) - startTime));
-            console.log("Downloaded parts: " + parts + ". All parts: " + fileInfo.parts + ". In: " + duration.getMinutes() + ":" + duration.getSeconds());
+            var endTime = new Date(),
+                timeElapsed = new Date(endTime - startTime),
+                durationString = timeElapsed.getMinutes() + ":" + timeElapsed.getSeconds() + "." + timeElapsed.getMilliseconds();
+
+            console.log("Downloaded parts: " + parts + ". All parts: " + self._fileInfo.parts + ". In: " + durationString);
             socket.emit("closeTransaction", transitionId);
             self._saver.stop(function (url) {
-                callback(null, {duration: duration, url: url});
+                callback(null, {duration: timeElapsed, url: url});
                 return;
             });
             return;
@@ -35,64 +36,54 @@ Receiver.prototype.start = function (callback) {
         socket.emit("getData", transitionId);
     });
 
-    socket.emit("openTransaction", fileInfo.id, function (error, id) {
+    socket.emit("openTransaction", self._fileInfo.id, function (error, id) {
         transitionId = id;
-        startTime = new Date;
+        startTime = new Date();
         socket.emit("getData", transitionId);
     });
 };
 
-Receiver.prototype.getData = function () {
-    "use strict";
-    return {info: this._fileInfo, parts: this._data}
-};
+var Saver = {
+    get: function () {
+        var saver = window.webkitRequestFileSystem ? new FileSystemSaver : new RamSaver;
+        return saver;
+    },
+    States: {
+        readyForWrite: "readyForWrite",
+        complete: "complete",
+        downloadComplete: "downloadComplete",
+        writing: "writing"
+    },
+    dataURLToBlob: function (dataURL) {
+        var BASE64_MARKER = ';base64,',
+            parts = null,
+            contentType = null,
+            raw = null;
 
+        if (dataURL.indexOf(BASE64_MARKER) == -1) {
+            parts = dataURL.split(',');
+            contentType = parts[0].split(':')[1];
+            raw = parts[1];
 
-function Saver() {
-    "use strict";
+            return new Blob([raw], {type: contentType});
+        }
 
-};
+        parts = dataURL.split(BASE64_MARKER);
+        contentType = parts[0].split(':')[1];
+        raw = window.atob(parts[1]);
+        var rawLength = raw.length;
+        var uInt8Array = new Uint8Array(rawLength);
 
-Saver.get = function () {
-    "use strict";
-    var saver = window.webkitRequestFileSystem ? new FileSystemSaver : new RamSaver;
-    return saver;
-};
+        for (var i = 0; i < rawLength; ++i) {
+            uInt8Array[i] = raw.charCodeAt(i);
+        }
 
-Saver.States = {
-    readyForWrite: "readyForWrite",
-    complete: "complete",
-    downloadComplete: "downloadComplete",
-    writing: "writing"
-}
-
-Saver.dataURLToBlob = function (dataURL) {
-    var BASE64_MARKER = ';base64,';
-    if (dataURL.indexOf(BASE64_MARKER) == -1) {
-        var parts = dataURL.split(',');
-        var contentType = parts[0].split(':')[1];
-        var raw = parts[1];
-
-        return new Blob([raw], {type: contentType});
+        return new Blob([uInt8Array], {type: contentType});
     }
-
-    var parts = dataURL.split(BASE64_MARKER);
-    var contentType = parts[0].split(':')[1];
-    var raw = window.atob(parts[1]);
-    var rawLength = raw.length;
-
-    var uInt8Array = new Uint8Array(rawLength);
-
-    for (var i = 0; i < rawLength; ++i) {
-        uInt8Array[i] = raw.charCodeAt(i);
-    }
-
-    return new Blob([uInt8Array], {type: contentType});
 };
 
 
 function FileSystemSaver() {
-    "use strict";
     var self = this;
 
     this._info = null;
@@ -105,31 +96,31 @@ function FileSystemSaver() {
     this._onSave = null;
 
     this._write = function () {
-        if (self._state === Saver.States.readyForWrite)
-            self._state = Saver.States.writing;
+        if (this._state === Saver.States.readyForWrite)
+            this._state = Saver.States.writing;
 
-        if (!self._data.length && self._state === Saver.States.downloadComplete) {
-            self._url = self._fileHandler.toURL();
-            self._state = Saver.States.complete;
-            if (self._onSave) self._onSave(self._url);
+        if (!this._data.length && this._state === Saver.States.downloadComplete) {
+            this._url = this._fileHandler.toURL();
+            this._state = Saver.States.complete;
+            if (this._onSave) this._onSave(this._url);
             return;
         }
-        if (!self._data.length) {
-            setTimeout(self._write, FileSystemSaver.settings.writeTimeout)
+        if (!this._data.length) {
+            setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
             return;
         }
 
         var blobs = [];
 
-        while (self._data.length) {
-            var dataItem = self._data.shift();
+        while (this._data.length) {
+            var dataItem = this._data.shift();
             blobs.push(Saver.dataURLToBlob(dataItem));
             dataItem = null;
         }
 
         var bb = new Blob(blobs);
-        self._fileWriter.seek(self._fileWriter.length);
-        self._fileWriter.write(bb);
+        this._fileWriter.seek(this._fileWriter.length);
+        this._fileWriter.write(bb);
         bb = null;
     }
 }
@@ -138,7 +129,7 @@ FileSystemSaver.prototype.start = function (info) {
     "use strict";
     var self = this;
 
-    self._info = info;
+    this._info = info;
 
     window.webkitRequestFileSystem(window.TEMPORARY, info.length, function (filesystem) {
         self._fs = filesystem;
@@ -172,29 +163,23 @@ FileSystemSaver.prototype.start = function (info) {
 };
 
 FileSystemSaver.prototype.stop = function (callback) {
-    "use strict";
     this._state = Saver.States.downloadComplete;
     this._onSave = callback;
 }
 
 FileSystemSaver.prototype.add = function (data) {
-    "use strict";
-    var self = this;
-
-    self._data.push(data);
+    this._data.push(data);
     /* if fileSystem ready start writing */
-    if (self._state === Saver.States.readyForWrite) {
-        self._write();
+    if (this._state === Saver.States.readyForWrite) {
+        this._write();
     }
 };
 
 FileSystemSaver.prototype.getUrl = function () {
-    "use strict";
     return this._url;
 }
 
 FileSystemSaver.errorHandler = function (e) {
-    debugger;
     var msg = '';
     switch (e.code) {
         case FileError.QUOTA_EXCEEDED_ERR:
@@ -224,9 +209,6 @@ FileSystemSaver.settings = {
 };
 
 function RamSaver() {
-    "use strict";
-    var self = this;
-
     this._data = [];
     this._url = null;
     this._onSave = null;
@@ -234,76 +216,49 @@ function RamSaver() {
     this._state = "";
 
     this._write = function () {
-        if (self._state === Saver.States.readyForWrite)
-            self._state = Saver.States.writing;
+        if (this._state === Saver.States.readyForWrite)
+            this._state = Saver.States.writing;
 
-        if (!self._data.length && self._state === Saver.States.downloadComplete) {
-            self._url = URL.createObjectURL(self._blob);
-            self._state = Saver.States.complete;
-            if (self._onSave) self._onSave(self._url);
+        if (!this._data.length && this._state === Saver.States.downloadComplete) {
+            this._url = URL.createObjectURL(this._blob);
+            this._state = Saver.States.complete;
+            if (this._onSave) this._onSave(this._url);
             return;
         }
-        if (!self._data.length) {
-            setTimeout(self._write, FileSystemSaver.settings.writeTimeout)
+        if (!this._data.length) {
+            setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
             return;
         }
 
         var blobs = [];
 
-        while (self._data.length) {
-            var dataItem = self._data.shift();
+        while (this._data.length) {
+            var dataItem = this._data.shift();
             blobs.push(Saver.dataURLToBlob(dataItem));
             dataItem = null;
         }
         if (blobs.length) {
-            if (self._blob) blobs.unshift(self._blob);
-            self._blob = new Blob(blobs);
+            if (this._blob) blobs.unshift(this._blob);
+            this._blob = new Blob(blobs);
             blobs = null;
-            setTimeout(self._write, 2000);
+            setTimeout(this._write, 2000);
         }
     };
 };
 
 RamSaver.prototype.start = function (info) {
-    "use strict";
     setTimeout(this._write, 2000);
 };
 
 RamSaver.prototype.stop = function (callback) {
-    "use strict";
-    var self = this;
-
-    self._state = Saver.States.downloadComplete;
-    self._onSave = callback;
+    this._state = Saver.States.downloadComplete;
+    this._onSave = callback;
 };
 
 RamSaver.prototype.add = function (data) {
-    "use strict";
     this._data.push(data);
 };
 
 RamSaver.prototype.getUrl = function () {
 };
 
-Utility = {
-    getTypedSize: function (size) {
-        "use strict";
-        var fileSize = {};
-        if (size < 1024) {
-            // size in bytes
-            fileSize.size = size;
-            fileSize.type = "bytes";
-        } else {
-            if (size < 1024 * 1024) {
-                // in kb
-                fileSize.size = (size / 1024).toFixed(2);
-                fileSize.type = "kb";
-            } else {
-                // mb
-                fileSize.size = (size / (1024 * 1024)).toFixed(2);
-                fileSize.type = "mb";
-            }
-        }
-        return fileSize;
-    }
-}
