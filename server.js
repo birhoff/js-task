@@ -7,12 +7,23 @@ var DbWrapper = function () {
 
 
 var app = require('express')(),
+    express = require('express'),
     server = require('http').createServer(app),
     io = require('socket.io').listen(server),
     fs = require('fs'),
+    jade = require("jade"),
     db = new DbWrapper;
 
 io.set('log level', 1);
+
+app.configure('all', function () {
+    app.use('/js', express.static(__dirname + '/js'));
+    app.use('/images', express.static(__dirname + '/images'));
+    app.use('/styles', express.static(__dirname + '/styles'));
+    app.use('/libs', express.static(__dirname + '/libs'));
+    app.use('/', express.static(__dirname));
+});
+
 server.listen(8080);
 
 var senderIo = io.of('/sender').on('connection', function (socket) {
@@ -67,20 +78,15 @@ var recipientIo = io.of('/recipient').on('connection', function (socket) {
     });
 });
 
-
-/* Request handlers */
-app.get(/\/js\/(.+)/, function (req, res) {
-    res.sendfile(__dirname + '/js/' + req.params[0]);
-});
-app.get(/\/images\/(.+)/, function (req, res) {
-    res.sendfile(__dirname + '/images/' + req.params[0]);
-});
-app.get(/\/styles\/(.+)/, function (req, res) {
-    res.sendfile(__dirname + '/styles/' + req.params[0]);
-});
-
 app.get('/', function (req, res) {
-    res.sendfile(__dirname + '/sender.html');
+
+    fs.readFile('sender.jade', 'utf8', function (err, data) {
+        if (err) {
+            return console.log(err);
+        }
+        var fn = jade.compile(data);
+        res.send(fn());
+    });
 });
 
 app.get(/^\/file\/(\w+)/, function (req, res) {
