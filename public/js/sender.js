@@ -40,7 +40,7 @@ Sender.prototype.register = function (file, callback) {
                 $(self).trigger("progress", value);
             });
 
-            $(transitMng).on("endUpload", function (event, value) {
+            $(transitMng).on("endUpload", function () {
                 $(self).trigger("endUpload");
             });
 
@@ -77,13 +77,15 @@ Sender.slice = function (file, /* optional */ partSize) {
         result.push({blob: file.slice(currentOffset, file.size), data: null});
     }
     return result;
-}
+};
 
 Sender.idToUrl = function (fileId) {
     return window.location.origin + '/file/' + fileId;
 };
 
 function TransitManager(transactionId, socket, parts) {
+    var self = this;
+
     this._id = transactionId;
     this._socket = socket;
     this._parts = parts;
@@ -92,7 +94,7 @@ function TransitManager(transactionId, socket, parts) {
         console.log("closeTransition");
         $(self).trigger("endUpload");
     });
-};
+}
 
 TransitManager.prototype.start = function () {
     var self = this,

@@ -21,8 +21,6 @@ server.listen(8080);
 io.set('log level', 1);
 
 io.of('/sender').on('connection', function (socket) {
-    "use strict";
-
     socket.on('registerFile', function (info) {
         var dbItem = {
             socket: socket,

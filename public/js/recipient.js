@@ -5,9 +5,7 @@ function Receiver(socket, fileInfo) {
     this._fileInfo = fileInfo;
     this._saver = Saver.get();
 
-    this.onStart = null;
     this.onProgress = null;
-    this.onEnd = null;
 }
 
 Receiver.prototype.start = function (callback) {
@@ -40,7 +38,7 @@ Receiver.prototype.start = function (callback) {
         socket.emit("getData", transitionId);
     });
 
-    socket.emit("openTransaction", self._fileInfo.id, function (error, id) {
+    socket.emit("openTransaction", this._fileInfo.id, function (error, id) {
         transitionId = id;
         startTime = new Date();
         socket.emit("getData", transitionId);
@@ -85,7 +83,6 @@ var Saver = {
         return new Blob([uInt8Array], {type: contentType});
     }
 };
-
 
 function FileSystemSaver() {
     this._info = null;
@@ -139,6 +136,8 @@ FileSystemSaver.prototype.start = function (info) {
 };
 
 FileSystemSaver.prototype._initFileWriter = function (name, fs) {
+    var self = this;
+
     fs.root.getFile(name, {create: true}, function (fileEntry) {
         fileEntry.remove(function () {
             fs.root.getFile(name, {create: true}, function (fileEntry) {
@@ -224,7 +223,7 @@ RamSaver.prototype._write = function () {
         return;
     }
     if (!this._data.length) {
-        setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
+        window.setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
         return;
     }
 
