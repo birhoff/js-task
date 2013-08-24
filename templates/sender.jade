@@ -9,37 +9,42 @@ html(lang="en")
         script(src='/socket.io/socket.io.js')
         script(src='/js/sender.js')
         script(type='text/javascript').
-          var socket = io.connect('http://localhost/sender'),
-              sender = new Sender(socket);
+            var socket = io.connect('http://localhost/sender'),
+                sender = new Sender(socket);
 
-          $(window).load(function () {
-                        var $uploadControl = $("#UploadInput");
-                        $uploadControl.on('change', function (event) {
-                            file = $uploadControl.get(0).files[0];
-                            sender.register(file, function (link) {
-                                $("#linkContainer").text(link);
-                                $("#linkContainer").attr('href', link);
-                                $("#uploadScreen").hide();
-                                $("#linkScreen").css("display", "table");
-                                            $(sender).on("startUpload", function () {
-                                    $("#progressBar").progressbar({value: false});
-                                    $("#linkScreen").hide();
-                                    $("#uplodingScreen").css("display", "table");
-                                });
-                                            $(sender).on("progress", function (event, value) {
-                                    $("#progressBar").progressbar("value", parseInt(value));
-                                });
-                                            $(sender).on("endUpload", function () {
-                                    $("#uplodingScreen").hide();
-                                    $("#finishScreen").css("display", "table");
-                                });
-                            });
+            $(window).load(function () {
+                var $uploadControl = $("#UploadInput");
+
+                $uploadControl.on('change', function (event) {
+                    file = $uploadControl.get(0).files[0];
+                    sender.register(file, function (link) {
+                        $("#linkContainer").text(link);
+                        $("#linkContainer").attr('href', link);
+                        $("#uploadScreen").hide();
+                        $("#linkScreen").css("display", "table");
+
+                        $(sender).on("startUpload", function () {
+                            $("#progressBar").progressbar({value: false});
+                            $("#linkScreen").hide();
+                            $("#uplodingScreen").css("display", "table");
                         });
-                                    $("#upload-btn").on("click", function (ev) {
-                            ev.preventDefault();
-                            $uploadControl.click();
-                        })
+
+                        $(sender).on("progress", function (event, value) {
+                            $("#progressBar").progressbar("value", parseInt(value));
+                        });
+
+                        $(sender).on("endUpload", function () {
+                            $("#uplodingScreen").hide();
+                            $("#finishScreen").css("display", "table");
+                        });
                     });
+                });
+
+                $("#upload-btn").on("click", function (ev) {
+                    ev.preventDefault();
+                    $uploadControl.click();
+                })
+            });
     body
         .content
             .upload-container

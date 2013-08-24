@@ -16,14 +16,13 @@ html(lang="en")
                 $("#download-link").on("click", function (ev) {
                     ev.preventDefault();
                     receiver = new Receiver(socket, fileInfo);
+                    receiver.onProgress = function (value) {
+                        $("#progressBar").progressbar("value", value);
+                    };
 
                     $("#progressBar").progressbar({value: false});
                     $("#startScreen").hide();
                     $("#downloadingScreen").css("display", "table");
-
-                    $(receiver).on("progress", function (event, value) {
-                        $("#progressBar").progressbar("value", parseInt(value));
-                    });
 
                     receiver.start(function (error, result) {
                         console.log(result.url);
@@ -33,7 +32,8 @@ html(lang="en")
                     });
                 });
             });
-        script
+
+        script(type='text/javascript').
             var fileInfo = !{JSON.stringify(fileInfo)};
 body
     .content
@@ -54,5 +54,5 @@ body
 
             #finishScreen.layout
                 .message-center
-                h1 Download complete
-                a#save-link.upload-button Save file
+                    h1 Download complete
+                    a#save-link.upload-button Save file

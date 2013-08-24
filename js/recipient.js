@@ -4,6 +4,10 @@ function Receiver(socket, fileInfo) {
     this._socket = socket;
     this._fileInfo = fileInfo;
     this._saver = Saver.get();
+
+    this.onStart = null;
+    this.onProgress = null;
+    this.onEnd = null;
 }
 
 Receiver.prototype.start = function (callback) {
@@ -18,7 +22,7 @@ Receiver.prototype.start = function (callback) {
         self._saver.add(result.data);
         result.data = null;
         parts++;
-        $(self).trigger("progress", ((parts / self._fileInfo.parts) * 100).toFixed(0));
+        self.onProgress && self.onProgress(parseInt(((parts / self._fileInfo.parts) * 100).toFixed(0)));
 
         if (result.status === "complete") {
             var endTime = new Date(),
@@ -84,7 +88,6 @@ var Saver = {
 
 
 function FileSystemSaver() {
-    var self = this;
 
     this._info = null;
     this._data = [];
@@ -126,7 +129,6 @@ function FileSystemSaver() {
 }
 
 FileSystemSaver.prototype.start = function (info) {
-    "use strict";
     var self = this;
 
     this._info = info;
@@ -174,10 +176,6 @@ FileSystemSaver.prototype.add = function (data) {
         this._write();
     }
 };
-
-FileSystemSaver.prototype.getUrl = function () {
-    return this._url;
-}
 
 FileSystemSaver.errorHandler = function (e) {
     var msg = '';
@@ -257,8 +255,5 @@ RamSaver.prototype.stop = function (callback) {
 
 RamSaver.prototype.add = function (data) {
     this._data.push(data);
-};
-
-RamSaver.prototype.getUrl = function () {
 };
 

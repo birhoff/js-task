@@ -1,3 +1,5 @@
+"use strict";
+
 var Socket = {
     commands: {
         register: "registerFile",
@@ -7,16 +9,12 @@ var Socket = {
 };
 
 function Sender(socket) {
-    "use strict";
-
-    var self = this;
     this._file = null;
     this._parts = null;
     this._socket = socket;
 }
 
 Sender.prototype.register = function (file, callback) {
-    "use strict";
     var self = this,
         transactionId = null,
         transitMng = null;
@@ -24,7 +22,7 @@ Sender.prototype.register = function (file, callback) {
     this._file = file;
     this._parts = Sender.slice(file);
 
-    if (!self._file || !self._parts.length) {
+    if (!this._file || !this._parts.length) {
         callback("Incorrect file", null);
         return;
     }
@@ -52,12 +50,11 @@ Sender.prototype.register = function (file, callback) {
         callback && callback(Sender.idToUrl(fileId));
     });
 
-    socket.emit(Socket.commands.register, { file: {name: self._file.name, size: self._file.size}, parts: self._parts.length });
+    socket.emit(Socket.commands.register, { file: {name: this._file.name, size: this._file.size}, parts: this._parts.length });
 };
 
 /** Return array of Blobs with size = partSize or  1024 * 64 as default blob size */
 Sender.slice = function (file, /* optional */ partSize) {
-    "use strict";
     var chunkSize = partSize || 1024 * 1024,
         result = [],
         currentOffset = 0, parts, bytesLeft;
@@ -83,14 +80,10 @@ Sender.slice = function (file, /* optional */ partSize) {
 }
 
 Sender.idToUrl = function (fileId) {
-    "use strict";
     return window.location.origin + '/file/' + fileId;
 };
 
 function TransitManager(transactionId, socket, parts) {
-    "use strict";
-    var self = this;
-
     this._id = transactionId;
     this._socket = socket;
     this._parts = parts;
@@ -102,7 +95,6 @@ function TransitManager(transactionId, socket, parts) {
 };
 
 TransitManager.prototype.start = function () {
-    "use strict";
     var self = this,
         reader = new FileReader,
         currentIndex = 0,
@@ -110,8 +102,7 @@ TransitManager.prototype.start = function () {
 
     readDataAsync();
 
-
-    self._socket.on("getData", function sendPart() {
+    this._socket.on("getData", function sendPart() {
         if (!self._parts[currentIndex]) return;
         if (!self._parts[currentIndex].data) {
             setTimeout(sendPart, 300);
