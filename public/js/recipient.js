@@ -88,7 +88,6 @@ var Saver = {
 
 
 function FileSystemSaver() {
-
     this._info = null;
     this._data = [];
     this._fs = null;
@@ -97,36 +96,36 @@ function FileSystemSaver() {
     this._fileWriter = null;
     this._url = null;
     this._onSave = null;
-
-    this._write = function () {
-        if (this._state === Saver.States.readyForWrite)
-            this._state = Saver.States.writing;
-
-        if (!this._data.length && this._state === Saver.States.downloadComplete) {
-            this._url = this._fileHandler.toURL();
-            this._state = Saver.States.complete;
-            if (this._onSave) this._onSave(this._url);
-            return;
-        }
-        if (!this._data.length) {
-            setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
-            return;
-        }
-
-        var blobs = [];
-
-        while (this._data.length) {
-            var dataItem = this._data.shift();
-            blobs.push(Saver.dataURLToBlob(dataItem));
-            dataItem = null;
-        }
-
-        var bb = new Blob(blobs);
-        this._fileWriter.seek(this._fileWriter.length);
-        this._fileWriter.write(bb);
-        bb = null;
-    }
 }
+
+FileSystemSaver.prototype._write = function () {
+    if (this._state === Saver.States.readyForWrite)
+        this._state = Saver.States.writing;
+
+    if (!this._data.length && this._state === Saver.States.downloadComplete) {
+        this._url = this._fileHandler.toURL();
+        this._state = Saver.States.complete;
+        if (this._onSave) this._onSave(this._url);
+        return;
+    }
+    if (!this._data.length) {
+        window.setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
+        return;
+    }
+
+    var blobs = [];
+
+    while (this._data.length) {
+        var dataItem = this._data.shift();
+        blobs.push(Saver.dataURLToBlob(dataItem));
+        dataItem = null;
+    }
+
+    var bb = new Blob(blobs);
+    this._fileWriter.seek(this._fileWriter.length);
+    this._fileWriter.write(bb);
+    bb = null;
+};
 
 FileSystemSaver.prototype.start = function (info) {
     var self = this;
@@ -135,33 +134,33 @@ FileSystemSaver.prototype.start = function (info) {
 
     window.webkitRequestFileSystem(window.TEMPORARY, info.length, function (filesystem) {
         self._fs = filesystem;
-        initFileWriter(self._info.name, self._fs);
+        self._initFileWriter(self._info.name, self._fs);
     }, FileSystemSaver.errorHandler);
+};
 
-    function initFileWriter(name, fs) {
-        fs.root.getFile(name, {create: true}, function (fileEntry) {
-            fileEntry.remove(function () {
-                fs.root.getFile(name, {create: true}, function (fileEntry) {
-                    self._fileHandler = fileEntry;
-                    fileEntry.createWriter(function (fileWriter) {
-                        self._fileWriter = fileWriter;
+FileSystemSaver.prototype._initFileWriter = function (name, fs) {
+    fs.root.getFile(name, {create: true}, function (fileEntry) {
+        fileEntry.remove(function () {
+            fs.root.getFile(name, {create: true}, function (fileEntry) {
+                self._fileHandler = fileEntry;
+                fileEntry.createWriter(function (fileWriter) {
+                    self._fileWriter = fileWriter;
 
-                        fileWriter.onwriteend = function (e) {
-                            setTimeout(function () {
-                                self._write();
-                            }, FileSystemSaver.settings.writeTimeout);
-                        };
+                    fileWriter.onwriteend = function (e) {
+                        setTimeout(function () {
+                            self._write();
+                        }, FileSystemSaver.settings.writeTimeout);
+                    };
 
-                        fileWriter.onerror = function (e) {
-                            console.log('Write failed: ' + e.toString());
-                        };
+                    fileWriter.onerror = function (e) {
+                        console.log('Write failed: ' + e.toString());
+                    };
 
-                        self._state = Saver.States.readyForWrite;
-                    }, FileSystemSaver.errorHandler);
+                    self._state = Saver.States.readyForWrite;
                 }, FileSystemSaver.errorHandler);
-            });
-        }, FileSystemSaver.errorHandler);
-    };
+            }, FileSystemSaver.errorHandler);
+        });
+    }, FileSystemSaver.errorHandler);
 };
 
 FileSystemSaver.prototype.stop = function (callback) {
@@ -212,40 +211,40 @@ function RamSaver() {
     this._onSave = null;
     this._blob = null;
     this._state = "";
+};
 
-    this._write = function () {
-        if (this._state === Saver.States.readyForWrite)
-            this._state = Saver.States.writing;
+RamSaver.prototype._write = function () {
+    if (this._state === Saver.States.readyForWrite)
+        this._state = Saver.States.writing;
 
-        if (!this._data.length && this._state === Saver.States.downloadComplete) {
-            this._url = URL.createObjectURL(this._blob);
-            this._state = Saver.States.complete;
-            if (this._onSave) this._onSave(this._url);
-            return;
-        }
-        if (!this._data.length) {
-            setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
-            return;
-        }
+    if (!this._data.length && this._state === Saver.States.downloadComplete) {
+        this._url = URL.createObjectURL(this._blob);
+        this._state = Saver.States.complete;
+        if (this._onSave) this._onSave(this._url);
+        return;
+    }
+    if (!this._data.length) {
+        setTimeout(this._write, FileSystemSaver.settings.writeTimeout)
+        return;
+    }
 
-        var blobs = [];
+    var blobs = [];
 
-        while (this._data.length) {
-            var dataItem = this._data.shift();
-            blobs.push(Saver.dataURLToBlob(dataItem));
-            dataItem = null;
-        }
-        if (blobs.length) {
-            if (this._blob) blobs.unshift(this._blob);
-            this._blob = new Blob(blobs);
-            blobs = null;
-            setTimeout(this._write, 2000);
-        }
-    };
+    while (this._data.length) {
+        var dataItem = this._data.shift();
+        blobs.push(Saver.dataURLToBlob(dataItem));
+        dataItem = null;
+    }
+    if (blobs.length) {
+        if (this._blob) blobs.unshift(this._blob);
+        this._blob = new Blob(blobs);
+        blobs = null;
+        window.setTimeout(this._write, 2000);
+    }
 };
 
 RamSaver.prototype.start = function (info) {
-    setTimeout(this._write, 2000);
+    window.setTimeout(this._write, 2000);
 };
 
 RamSaver.prototype.stop = function (callback) {

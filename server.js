@@ -9,11 +9,11 @@ var express = require('express'),
     Utility = require('./modules/utility').Utility;
 
 app.configure('all', function () {
-    app.use('/js', express.static(__dirname + '/js'));
-    app.use('/images', express.static(__dirname + '/images'));
-    app.use('/styles', express.static(__dirname + '/styles'));
-    app.use('/libs', express.static(__dirname + '/libs'));
-    app.use('/', express.static(__dirname));
+    app.use('/js', express.static(__dirname + '/public/js'));
+    app.use('/images', express.static(__dirname + '/public/images'));
+    app.use('/styles', express.static(__dirname + '/public/styles'));
+    app.use('/libs', express.static(__dirname + '/public/libs'));
+    app.use('/', express.static(__dirname + "/public"));
 });
 
 server.listen(8080);

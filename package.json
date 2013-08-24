@@ -1,18 +1,16 @@
 {
     "name": "js-task",
     "version": "0.0.1",
-    "description": "",
     "scripts": {
-        "start": "start.js"
+        "start": "server.js"
     },
     "repository": {
         "type": "git",
         "url": "git@github.com:birhoff/js-task.git"
     },
-    "author": "",
-    "license": "",
-    "devDependencies": {
-        "express": "",
-        "socket.io": ""
+    "dependencies": {
+        "express": "*",
+        "socket.io": "*",
+        "connect" : "*"
     }
 }

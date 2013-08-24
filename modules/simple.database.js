@@ -1,5 +1,5 @@
 "use strict";
-
+var Utility = require("./utility").Utility;
 var DbWrapper = function () {
     this._db = {
         files: {},
@@ -21,13 +21,10 @@ DbWrapper.prototype.add = function (table, value) {
 DbWrapper.getFileIdentificator = function (table) {
     var result = null;
     while (!result) {
-        result = 'xxxxxx'.replace(/[x]/g, function (c) {
-            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
+        result = Utility.getFileId();
         if (table[result]) result = null;
     }
     return result;
 };
 
-exports.DbWrapper =  DbWrapper;
+exports.DbWrapper = DbWrapper;
